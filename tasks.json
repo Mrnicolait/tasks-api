@@ -1,0 +1,38 @@
+{
+    "tasks": [
+        {
+            "id": 2,
+            "title": "Aprendendo python",
+            "description": "qualquer uma",
+            "status": "correto",
+            "owner": "Marcelo",
+            "comments": [
+                "hahaha",
+                "kkkkkk",
+                "hehehehe"
+            ]
+        },
+        {
+            "title": "Fazer a barba",
+            "description": "Comprar gilete",
+            "owner": "Marcelo",
+            "status": "Concluido",
+            "comments": [
+                "Comentário 1",
+                "Comentário 2"
+            ],
+            "id": 3
+        },
+        {
+            "title": "Fazer compras",
+            "description": "Comprar leite, pão e ovos",
+            "owner": "João",
+            "status": "Pendente",
+            "comments": [
+                "Comentário 1",
+                "Comentário 2"
+            ],
+            "id": 4
+        }
+    ]
+}
