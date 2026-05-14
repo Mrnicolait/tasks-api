@@ -4,10 +4,10 @@ from sqlalchemy import Column, Integer, JSON
 from sqlmodel import Field, SQLModel
 
 # class Hero(SQLModel, table=True):
-# id: int | None = Field(default=None, primary_key=True)
-# name: str = Field(index=True)
-# age: int | None = Field(default=None, index=True)
-# secret_name: str
+#     id: int | None = Field(default=None, primary_key=True)
+#     name: str = Field(index=True)
+#     age: int | None = Field(default=None, index=True)
+#     secret_name: str
 
 class TaskStatus(str, enum.Enum):
     PENDENTE = "pendente"
@@ -17,8 +17,8 @@ class TaskStatus(str, enum.Enum):
 
 class Task(SQLModel, table=True):
     id: int | None = Field(
-    default=None,
-    sa_column=Column(Integer, primary_key=True, autoincrement=True),
+        default=None,
+        sa_column=Column(Integer, primary_key=True, autoincrement=True),
     )
     title: str
     description: str

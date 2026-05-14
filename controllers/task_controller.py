@@ -1,8 +1,11 @@
 
+from sqlmodel import Session
+
+
 try:
-    from ..services.task_service import TaskServices
+    from ..services.task_services import TaskServices
 except ImportError:
-    from services.task_service import TaskServices
+    from services.task_services import TaskServices
 
 try:
     from ..schemas.task_schema import TaskCreate, TaskUpdate
@@ -11,15 +14,16 @@ except ImportError:
     
 class TaskController:
     @staticmethod
-    async def get_tasks(owner: str | None = None,
+    async def get_tasks(session: Session,
+                        owner: str | None = None,
                         status: str | None = None,
                         skip: int = 0,
                         limit: int | None = None):
-        return await TaskServices.get_tasks(owner, status, skip, limit)
+        return await TaskServices.get_tasks(session, owner, status, skip, limit)
 
     @staticmethod
-    async def get_tasks_by_id(id: int):
-        return await TaskServices.get_tasks_by_id(id)
+    async def get_tasks_by_id(session: Session,id: int):
+        return await TaskServices.get_tasks_by_id(session, id)
 
     @staticmethod
     async def create_task(task: TaskCreate):

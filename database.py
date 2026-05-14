@@ -1,14 +1,13 @@
-from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
+from sqlalchemy import create_engine
+from sqlmodel import Field, SQLModel, Session
 
-
-
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 postgres_url = "postgresql+psycopg://admin:admin123@localhost:5432/tasks"
-engine = create_engine(postgres_url)
+
+connect_args = {}
+engine = create_engine(postgres_url, connect_args=connect_args)
 
 
 def create_db_and_tables():

@@ -1,6 +1,3 @@
-try:
-    from .task_service import TaskServices
-except ImportError:
-    from services.task_service import TaskServices
+from services.task_services import TaskServices
 
 __all__ = ["TaskServices"]

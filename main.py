@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from database import create_db_and_tables
 from routes.task_routes import router
+from models.task_model import Task
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
