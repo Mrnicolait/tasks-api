@@ -52,30 +52,28 @@ class TaskServices:
 
     # use essa doc como exemplo para fazer a criação no banco(https://fastapi.tiangolo.com/tutorial/sql-databases/#delete-a-hero) 
     @staticmethod
-    async def delete_task(id: int):
-        tasks_data = await TaskServices.ler_arquivo_json()
-        task_exists = any(item["id"] == id for item in tasks_data["tasks"])
-        if not task_exists:
-            raise HTTPException(status_code=404, detail="Task not found")
-        tasks_data["tasks"] = [item for item in tasks_data["tasks"] if item["id"] != id]
-        with TASKS_FILE.open("w", encoding="utf-8") as f:
-            json.dump(tasks_data, f, ensure_ascii=False, indent=4)
-        return {"message": "Task deletada com sucesso"}
+    async def delete_task(session: Session,id: int):
+        task = session.get(Task, id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Hero not found")
+        session.delete(task)
+        session.commit()
+        return {"ok": True}
+       
 
     #use essa doc como exemplo para fazer a criação no banco(https://fastapi.tiangolo.com/tutorial/sql-databases/#update-a-hero-with-heroupdate)
     @staticmethod
-    async def update_task(id: int, task: TaskUpdate):
-        tasks_data = await TaskServices.ler_arquivo_json()
-        tasks_list = tasks_data["tasks"]
-        index = next((i for i, item in enumerate(tasks_list) if item["id"] == id), None)
-        if index is None:
+    async def update_task(session: Session, id: int, task: TaskUpdate):
+        db_task = session.get(Task, id)
+        if not db_task:
             raise HTTPException(status_code=404, detail="Task not found")
-        updated = task.model_dump()
-        updated["id"] = id
-        tasks_list[index] = updated
-        with TASKS_FILE.open("w", encoding="utf-8") as f:
-            json.dump(tasks_data, f, ensure_ascii=False, indent=4)
-        return updated
+        task_data = task.model_dump(exclude_unset=True)
+        db_task.sqlmodel_update(task_data)
+        session.add(db_task)
+        session.commit()
+        session.refresh(db_task)
+        return db_task
+        
     
     @staticmethod
     async def ler_arquivo_json():
