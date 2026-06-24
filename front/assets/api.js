@@ -59,8 +59,18 @@ export async function getMe() {
   return request("/auth/me", { token: getToken() });
 }
 
-export async function listTasks() {
-  return request("/tasks/", { token: getToken() });
+// Alterado para aceitar filtros e injetar dinamicamente como query params (?owner=... ou ?status=...)
+export async function listTasks(filters = {}) {
+  const params = new URLSearchParams();
+  
+  if (filters.owner) params.append('owner', filters.owner);
+  if (filters.status) params.append('status', filters.status);
+
+  const queryString = params.toString();
+  // Se houver parâmetros, concatena na rota. Ex: /tasks/?owner=João
+  const path = queryString ? `/tasks/?${queryString}` : '/tasks/';
+
+  return request(path, { token: getToken() });
 }
 
 export async function createTask(task) {

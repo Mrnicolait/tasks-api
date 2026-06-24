@@ -10,6 +10,10 @@ import {
 
 const STATUSES = ["pendente", "fazendo", "concluido"];
 
+// Cache local global para manter o estado atual dos filtros ativos
+let currentOwnerFilter = null;
+let currentStatusFilter = null;
+
 function $(id) {
   return document.getElementById(id);
 }
@@ -123,20 +127,31 @@ function escapeHtml(str) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+    .replaceAll("'", "'");
 }
 
 let me = null;
 let tasksCache = [];
 
-async function refresh() {
+// A função refresh agora aceita e persiste os filtros de busca
+async function refresh(owner = null, status = null) {
   if (!mustAuth()) return;
 
-  tasksCache = await listTasks();
+  // Atualiza as variáveis de controle global para manter a busca ativa em outras ações
+  currentOwnerFilter = owner;
+  currentStatusFilter = status;
+
+  const filters = {};
+  if (owner) filters.owner = owner;
+  if (status) filters.status = status;
+
+  // Passa os filtros estruturados para o listTasks da api.js
+  tasksCache = await listTasks(filters);
   setCounts(tasksCache);
 
   for (const st of STATUSES) {
     const col = $(`col-${st}`);
+    if (!col) continue; // Prevenção de quebra caso a coluna não exista no HTML
     col.innerHTML = "";
     const tasks = tasksCache
       .filter((t) => (t.status || "").toLowerCase() === st)
@@ -148,7 +163,8 @@ async function refresh() {
 async function handleDelete(id) {
   if (!confirm("Excluir esta task?")) return;
   await deleteTask(id);
-  await refresh();
+  // Atualiza mantendo os mesmos filtros de busca aplicados antes da exclusão
+  await refresh(currentOwnerFilter, currentStatusFilter);
 }
 
 async function handleUpdate(task, patch) {
@@ -161,7 +177,8 @@ async function handleUpdate(task, patch) {
     ...patch,
   };
   await updateTask(task.id, next);
-  await refresh();
+  // Atualiza mantendo os mesmos filtros de busca aplicados antes da edição
+  await refresh(currentOwnerFilter, currentStatusFilter);
 }
 
 // Dialog criar task
@@ -170,6 +187,8 @@ const fab = $("newTaskFab");
 const taskForm = $("taskForm");
 const closeTaskDialog = $("closeTaskDialog");
 const cancelTaskDialog = $("cancelTaskDialog");
+const searchInput = $("searchInput");
+const formBusca = $("formBusca");
 
 fab.addEventListener("click", () => {
   $("taskTitle").value = "";
@@ -201,7 +220,33 @@ taskForm.addEventListener("submit", async (e) => {
     comments: [],
   });
   dialog.close();
-  await refresh();
+  // Atualiza mantendo a listagem atual filtrada se houver alguma ativa
+  await refresh(currentOwnerFilter, currentStatusFilter);
+});
+
+// Evento de submit do formulário de busca
+formBusca.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const termoPesquisa = searchInput.value.trim();
+  
+  let ownerFilter = null;
+  let statusFilter = null;
+
+  if (termoPesquisa) {
+    const termoMinusculo = termoPesquisa.toLowerCase();
+
+    // Se o termo corresponder a um status conhecido, filtra por status
+    if (STATUSES.includes(termoMinusculo)) {
+      statusFilter = termoMinusculo;
+    } else {
+      // Caso contrário, trata como filtragem de dono
+      ownerFilter = termoPesquisa;
+    }
+  }
+
+  // Aciona a atualização passando os novos filtros coletados
+  await refresh(ownerFilter, statusFilter);
 });
 
 // Logout
@@ -211,16 +256,63 @@ $("logoutBtn").addEventListener("click", () => {
 });
 
 // Boot
+// Substitua o bloco da sua função boot antiga no final do arquivo por este:
 (async function boot() {
   if (!mustAuth()) return;
 
   try {
+    const formBuscaElement = $("formBusca");
+    const searchInputElement = $("searchInput");
+    // 1. MAPEIA O BOTÃO DO HTML PELO ID
+    const clearSearchBtn = $("clearSearchBtn"); 
+
+    if (formBuscaElement && searchInputElement) {
+      formBuscaElement.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const termoPesquisa = searchInputElement.value.trim();
+        let ownerFilter = null;
+        let statusFilter = null;
+
+        if (termoPesquisa) {
+          const termoMinusculo = termoPesquisa.toLowerCase();
+
+          if (STATUSES.includes(termoMinusculo)) {
+            statusFilter = termoMinusculo;
+          } else {
+            ownerFilter = termoPesquisa;
+          }
+        }
+
+        await refresh(ownerFilter, statusFilter);
+      });
+    } else {
+      console.warn("Aviso: Elementos do formBusca não foram encontrados no HTML ainda.");
+    }
+
+    // 2. ADICIONA A LÓGICA DE CLIQUE E ATUALIZAÇÃO DO BOTÃO LIMPAR
+    if (clearSearchBtn && searchInputElement) {
+      clearSearchBtn.addEventListener("click", async () => {
+        searchInputElement.value = ""; // Esvazia o campo de texto visualmente
+        
+        // Zera as variáveis de controle global para garantir que a busca foi apagada da memória
+        currentOwnerFilter = null;
+        currentStatusFilter = null;
+
+        // Faz a chamada limpa trazendo todas as tasks originais de volta
+        await refresh(null, null); 
+      });
+    }
+
     me = await getMe();
     $("me").textContent = me?.username || "usuário";
     await refresh();
+    
   } catch (err) {
+    console.error("Erro durante a inicialização (boot):", err);
     clearToken();
     window.location.href = "./login.html";
   }
 })();
+
 

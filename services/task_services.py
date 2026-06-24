@@ -22,7 +22,7 @@ class TaskServices:
                         limit: int | None = None):
         declaracao = select(Task).order_by(Task.id)
         if owner is not None:
-            declaracao = declaracao.where(Task.owner.contains(owner))
+            declaracao = declaracao.where(Task.owner.ilike(f"%{owner}%"))
         if status is not None:
             declaracao = declaracao.where(Task.status == status.lower())
 
